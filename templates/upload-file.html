@@ -1,0 +1,23 @@
+
+<h2>Rosetta Hack 2021</h2>
+<img src="/static/folding-protein.gif" alt="folding protein" />
+<form action="/" method="POST" enctype="multipart/form-data">
+    <input type="file" name="file_name" multiple>
+    <br>
+    <br>
+    <input type="submit" value="Submit">
+</form>
+{{msg}}
+<br>
+{{job_id}}
+<br>
+{{file_size}}
+<br>
+{{file_contents}}
+<br>
+Folding Jobs:
+<ol>
+{%for i in range(0, len)%}
+    <li>{{jobs[i].to_json()}}</li>
+{%endfor%}
+</ol>
