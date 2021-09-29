@@ -6,3 +6,6 @@ Repo for Microsoft Hack 2021
 
 # Run
 `python app.py`
+
+# Deployed
+http://rosetta-hack.azurewebsites.net/

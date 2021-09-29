@@ -2,6 +2,7 @@
 # encoding: utf-8
 from flask import Flask, request, jsonify, render_template
 from azure.cosmos import CosmosClient
+from datetime import datetime
 from json import JSONEncoder
 import os
 
@@ -76,28 +77,48 @@ class FoldingJobEncoder(JSONEncoder):
 def upload_file():
     if request.method == 'POST':
         f = request.files['file_name']
-        # read first line
-        data = f.readline()
+        # read first two lines
+        line = f.readline()
+        file_data = ''
+        max_lines = 5
+        line_count = 0
+        while line:
+            if line_count >= max_lines:
+                break
+            if file_data:
+                file_data += '\n' + str(line, 'utf-8')
+            else:
+                file_data = str(line, 'utf-8')
+            line = f.readline()
+            line_count += 1
         # get the cursor positioned at end
         f.seek(0, os.SEEK_END)
         # this will be equivalent to size of file
         size = f.tell()
         f.close()
-
-        # container.upsert_item({
-        #         'id': 'item{0}'.format(i),
-        #         'productName': 'Widget',
-        #         'productModel': 'Model {0}'.format(i)
-        #     }
-        # )
-        
-        foldingjobs = [] # FoldingJob.objects()
+        container.upsert_item({
+            'jobid': '',
+            'state': 'NEW',
+            'statusinfo': '',
+            'inputfilestring': file_data,
+            'name': f.filename,
+            'resultfileURL': '',
+            '_rid': '',
+            '_self': '',
+            '_etag': '',
+            '_attachments': '',
+            '_ts': datetime.now().timestamp()
+            }
+        )
+        foldingjobs = list(container.query_items(
+                query='SELECT * FROM r',
+                enable_cross_partition_query=True))
         return render_template(
-            "upload-file.html", 
+            "upload-file.html",
             msg="Uploaded: {}".format(f.filename),
             job_id="Folding Job ID: {}".format(None), # foldingjob.id),
             file_size="Size: {} bytes".format(size),
-            file_contents="Contents: {}".format(str(data, "utf-8")),
+            file_contents="Contents: {}".format(file_data),
             folding_jobs=foldingjobs,
             jobs=foldingjobs,
             len=len(foldingjobs))
