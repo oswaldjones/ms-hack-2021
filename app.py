@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, render_template
 from azure.cosmos import CosmosClient
-from datetime import datetime
-from json import JSONEncoder
 import os
+import uuid
 
 app = Flask(__name__, static_url_path = "/static", static_folder = "static")
 
@@ -16,109 +15,64 @@ database = client.get_database_client(database_name)
 container_name = 'joblist'
 container = database.get_container_client(container_name)
 
-@app.route('/foldingjob', methods=['GET'])
-def query_records():
-    id = request.args.get('id')
-    if not id:
-        # print(json.dumps(item, indent=True))
-        return jsonify(container.query_items(
-                query='SELECT * FROM r',
-                enable_cross_partition_query=True))
-    return jsonify(container.query_items(
-        query='SELECT * FROM products p WHERE p.productModel = @model',
-        parameters=[
-            dict(name='@model', value='Model 7')
-        ],
-        enable_cross_partition_query=True
-    ))
-
-# @app.route('/foldingjob', methods=['POST'])
-# def create_record():
-#     record = json.loads(request.data)
-#     foldingjob = FoldingJob(
-#         filename=record['filename'],
-#         size=record['size'],
-#         contents=record['contents'],
-#         created_at=record['created_at'])
-#     foldingjob.save()
-#     return jsonify(foldingjob)
-
-# @app.route('/foldingjob', methods=['PUT'])
-# def update_record():
-#     record = json.loads(request.data)
-#     foldingjob = FoldingJob.objects(id=record['id']).first()
-#     if not foldingjob:
-#         return jsonify({'error': 'data not found'})
-#     else:
-#         foldingjob.update(
-#             filename=record['filename'],
-#             size=record['size'],
-#             contents=record['contents'],
-#             created_at=record['created_at'])
-#     return jsonify(foldingjob)
-
-# @app.route('/foldingjob', methods=['DELETE'])
-# def delete_record():
-#     record = json.loads(request.data)
-#     foldingjob = FoldingJob.objects(id=record['id']).first()
-#     if not foldingjob:
-#         return jsonify({'error': 'data not found'})
-#     else:
-#         foldingjob.delete()
-#     return jsonify(foldingjob)
-
-
-# subclass JSONEncoder
-class FoldingJobEncoder(JSONEncoder):
-        def default(self, o):
-            return o.__dict__
-
+# root endpoint
 @app.route("/", methods=["GET", "POST"])
 def upload_file():
+    # handle post
     if request.method == 'POST':
-        f = request.files['file_name']
-        # read first two lines
-        line = f.readline()
-        file_data = ''
-        max_lines = 5
+        # keep list of sequences for upsert and display
+        amino_sequences = []
+        max_lines = 50
         line_count = 0
+        # read file line by line and append each found sequence to list
+        f = request.files['file_name']
+        line = f.readline().decode("utf-8").strip()
         while line:
+            line_count += 1
             if line_count >= max_lines:
                 break
-            if file_data:
-                file_data += '\n' + str(line, 'utf-8')
+            if line[0] == '>':
+                amino_sequences.append({"title": line[1:]})
             else:
-                file_data = str(line, 'utf-8')
-            line = f.readline()
-            line_count += 1
+                count = len(amino_sequences) 
+                if count:
+                    sequence = amino_sequences[count-1]
+                    if not sequence.get('value'):
+                        sequence['value'] = line
+                    else:
+                        sequence['value'] += line
+            line = f.readline().decode("utf-8").strip()
         # get the cursor positioned at end
         f.seek(0, os.SEEK_END)
         # this will be equivalent to size of file
         size = f.tell()
         f.close()
-        container.upsert_item({
-            'jobid': '',
-            'state': 'NEW',
-            'statusinfo': '',
-            'inputfilestring': file_data,
-            'name': f.filename,
-            'resultfileURL': '',
-            '_rid': '',
-            '_self': '',
-            '_etag': '',
-            '_attachments': '',
-            '_ts': datetime.now().timestamp()
-            }
-        )
+        # keep list of jobids for display
+        folding_jobids = []
+        # upsert found sequences to db
+        for seq in amino_sequences:
+            jobid = str(uuid.uuid4())
+            folding_jobids.append(jobid)
+            container.upsert_item({
+                'jobid': jobid,
+                'state': 'WAIT',
+                'statusinfo': '',
+                'inputfilestring': seq.get('value'),
+                'name': seq.get('title'),
+                'resultfileURL': '',
+                }
+            )
+        # get latest list from db for display
         foldingjobs = list(container.query_items(
                 query='SELECT * FROM r',
                 enable_cross_partition_query=True))
+        foldingjobs.reverse()
         return render_template(
             "upload-file.html",
             msg="Uploaded: {}".format(f.filename),
-            job_id="Folding Job ID: {}".format(None), # foldingjob.id),
+            job_id="Folding Job ID: {}".format(folding_jobids),
             file_size="Size: {} bytes".format(size),
-            file_contents="Contents: {}".format(file_data),
+            file_contents="Contents: {}".format(amino_sequences),
             folding_jobs=foldingjobs,
             jobs=foldingjobs,
             len=len(foldingjobs))
@@ -126,6 +80,7 @@ def upload_file():
     foldingjobs = list(container.query_items(
                 query='SELECT * FROM r',
                 enable_cross_partition_query=True))
+    foldingjobs.reverse()
     return render_template(
         "upload-file.html", 
         msg="Please choose a file",
