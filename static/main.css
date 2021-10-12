@@ -95,3 +95,10 @@ body {
 #jobs-box h6 {
     padding: 20px 0;
 }
+
+form h5 {
+    line-height: 34px;
+    margin: auto;
+    margin-bottom: 20px;
+    width: 600px;
+}
