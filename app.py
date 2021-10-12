@@ -69,13 +69,11 @@ def upload_file():
         foldingjobs.reverse()
         return render_template(
             "upload-file.html",
-            msg="Uploaded: {}".format(f.filename),
-            job_id="Folding Job ID: {}".format(folding_jobids),
-            file_size="Size: {} bytes".format(size),
-            file_contents="Contents: {}".format(amino_sequences),
+            msg="Uploaded: {} bytes".format(size),
             folding_jobs=foldingjobs,
             jobs=foldingjobs,
-            len=len(foldingjobs))
+            len=len(foldingjobs),
+            title='Rosetta Hack 2021')
         
     foldingjobs = list(container.query_items(
                 query='SELECT * FROM r',
@@ -86,7 +84,8 @@ def upload_file():
         msg="Please choose a file",
         folding_jobs=foldingjobs,
         jobs=foldingjobs,
-        len=len(foldingjobs))
+        len=len(foldingjobs),
+        title='Rosetta Hack 2021')
 
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port="5000", debug=True) 
