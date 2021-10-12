@@ -81,7 +81,7 @@ def upload_file():
     foldingjobs.reverse()
     return render_template(
         "upload-file.html", 
-        msg="Please choose a file",
+        msg="Please choose a file with amino acid (protein) sequences according to FASTA file format.",
         folding_jobs=foldingjobs,
         jobs=foldingjobs,
         len=len(foldingjobs),

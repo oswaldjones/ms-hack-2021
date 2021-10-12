@@ -1,7 +1,6 @@
 {% extends 'layout.html' %}
 {%block content%}
-<h2>{{title}}</h2>
-<img src="/static/folding-protein.gif" alt="folding protein" height="100" />
+<img src="/static/folding-protein.gif" alt="folding protein" height="200" />
 <form action="/" method="POST" enctype="multipart/form-data">
     <h5>{{msg}}</h5>
     <br>
@@ -10,7 +9,7 @@
 </form>
 <br>
 <div id="jobs-box">
-<h5>Submitted Folding Jobs:</h5>
+<h6>Submitted Folding Jobs:</h6>
 <div class="some-page-wrapper">
 {%for i in range(0, len)%}
 <div class="list-group">
