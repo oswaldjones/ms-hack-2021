@@ -8,7 +8,7 @@ body {
     overflow: auto;
     padding: 40px;
     text-align: center;
-    width: 800px;
+    max-width: 1000px;
 }
 
 #demo-file::file-selector-button {
