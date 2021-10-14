@@ -18,9 +18,9 @@ container_name = 'joblist'
 container = database.get_container_client(container_name)
 
 # Intentionally left blank to not make this public
-storage_account_name = ""
-storage_account_key = ""
-storage_connection_string = ""
+storage_account_name = os.environ.get('STORAGE_ACCOUNT_NAME', 'mshack2021storage')
+storage_account_key = os.environ.get('STORAGE_ACCOUNT_KEY', '')
+storage_connection_string = "DefaultEndpointsProtocol=https;AccountName={};AccountKey={};EndpointSuffix=core.windows.net".format(storage_account_name, storage_account_key)
 
 blob_service_client = BlobServiceClient.from_connection_string(storage_connection_string)
 
